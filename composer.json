@@ -1,0 +1,18 @@
+{
+    "name": "james090500/minecraft-skin-renderer",
+    "description": "Creates a 3D render of a minecraft skin in PHP",
+    "type": "library",
+    "require": {
+        "php": ">=7.0",
+        "intervention/image": "^2.5"
+    },
+    "authors": [
+        {
+            "name": "James Harrison",
+            "email": "james@fasttortoise.co.uk"
+        }
+    ],
+    "autoload": {
+        "psr-4": { "james090500\\": "src/" }
+    }
+}
