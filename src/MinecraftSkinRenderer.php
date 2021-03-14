@@ -2,7 +2,6 @@
 
 namespace james090500;
 
-use Intervention\Image\ImageManagerStatic as Image;
 use Imagick;
 use ImagickPixel;
 
