@@ -36,12 +36,14 @@ class MinecraftSkinRenderer {
         // //Create the parts
         self::$head = self::renderHead();
         self::$leftArm = self::renderLeftArm();
+        self::$rightArm = self::renderRightArm();
         self::$body = self::renderBody();
 
         // //Insert the parts
-        // $canvas->compositeImage(self::$head, imagick::COMPOSITE_OVER, self::$enlargeRatio * 1.5, 0);
         $canvas->compositeImage(self::$leftArm, imagick::COMPOSITE_OVER, 0, self::$head->getImageHeight() - (self::$enlargeRatio * 3));
-        $canvas->compositeImage(self::$body, imagick::COMPOSITE_OVER, self::$leftArm->getImageWidth() / 2, self::$head->getImageHeight() - (self::$enlargeRatio * 3));
+        $canvas->compositeImage(self::$rightArm, imagick::COMPOSITE_OVER, 72, self::$head->getImageHeight() - (self::$enlargeRatio * 9));
+        $canvas->compositeImage(self::$body, imagick::COMPOSITE_OVER, self::$leftArm->getImageWidth() / 2, self::$head->getImageHeight() - (self::$enlargeRatio * 5));
+        $canvas->compositeImage(self::$head, imagick::COMPOSITE_OVER, self::$enlargeRatio * 1.5, 0);
 
         Header("Content-Type: image/png");
         return $canvas;
@@ -136,20 +138,6 @@ class MinecraftSkinRenderer {
         $body = new Imagick();
         $body->newImage(200, 200, new ImagickPixel('transparent'), 'png');
 
-        // $topBody->distortImage(Imagick::DISTORTION_PERSPECTIVE, [
-        //     0, 0,
-        //     0, ($topBody->getImageHeight() / 2),
-
-        //     0, $topBody->getImageHeight(),
-        //     ($topBody->getImageHeight() / 4) * 3, $topBody->getImageHeight(),
-
-        //     $topBody->getImageWidth(), 0,
-        //     ($topBody->getImageHeight() / 4) * 3, 0,
-
-        //     $topBody->getImageWidth(), $topBody->getImageHeight(),
-        //     $topBody->getImageHeight() * 1.5, $topBody->getImageHeight() / 2,
-        // ], true);
-
         $topBody = new Imagick(self::$imageSrc);
         $topBody->cropImage(8, 4, 20, 16);
         $topBody->resizeImage(8 * self::$enlargeRatio, 4 * self::$enlargeRatio, imagick::FILTER_BOX, 0);
@@ -170,26 +158,34 @@ class MinecraftSkinRenderer {
         ], true);
         $topBody->trimImage(9999);
         $topBody->setImagePage(0, 0, 0, 0);
-        // $frontBody = new Imagick(self::$imageSrc);
-        // $frontBody->cropImage(8, 12, 20, 20);
-        // $frontBody->resizeImage($frontBody->getImageWidth() * self::$enlargeRatio, $frontBody->getImageHeight() * self::$enlargeRatio, imagick::FILTER_BOX, 0);
-        // $frontBody->setimagebackgroundcolor("transparent");
-        // $frontBody->setImageVirtualPixelMethod(Imagick::VIRTUALPIXELMETHOD_BACKGROUND);
-        // $frontBody->distortImage(Imagick::DISTORTION_PERSPECTIVE, [
-        //     0, 0,
-        //     0, 0,
 
-        //     0, $frontBody->getImageHeight(),
-        //     0, $frontBody->getImageHeight(),
+        $frontBody = new Imagick(self::$imageSrc);
+        $frontBody->cropImage(8, 12, 20, 20);
+        $frontBody->resizeImage($frontBody->getImageWidth() * self::$enlargeRatio, $frontBody->getImageHeight() * self::$enlargeRatio, imagick::FILTER_BOX, 0);
+        $frontBody->setimagebackgroundcolor("transparent");
+        $frontBody->setImageVirtualPixelMethod(Imagick::VIRTUALPIXELMETHOD_BACKGROUND);
+        $frontBody->distortImage(Imagick::DISTORTION_PERSPECTIVE, [
+            //top left
+            0, 0,
+            0, 0,
 
-        //     $frontBody->getImageWidth(), 0,
-        //     $frontBody->getImageWidth(), 0,
+            //bottom left
+            0, $frontBody->getImageHeight(),
+            0, $frontBody->getImageHeight(),
 
-        //     $frontBody->getImageWidth(), $frontBody->getImageHeight(),
-        //     $frontBody->getImageWidth(), $frontBody->getImageHeight(),
-        // ], false);
+            //top right
+            $frontBody->getImageWidth(), 0,
+            $topBody->getImageWidth(), -($topBody->getImageHeight()),
+
+            //bottom right
+            $frontBody->getImageWidth(), $frontBody->getImageHeight(),
+            $topBody->getImageWidth(), $frontBody->getImageHeight() - ($topBody->getImageHeight()),
+        ], true);
+        $frontBody->trimImage(999);
+        $frontBody->setImagePage(0, 0, 0, 0);
 
         $body->compositeImage($topBody, imagick::COMPOSITE_OVER, 0, 0);
+        $body->compositeImage($frontBody, imagick::COMPOSITE_OVER, 22, 0);
         $body->trimImage(9999);
         $body->setImagePage(0, 0, 0, 0);
 
@@ -275,5 +271,64 @@ class MinecraftSkinRenderer {
         $leftArm->trimImage(9999);
         $leftArm->setImagePage(0, 0, 0, 0);
         return $leftArm;
+    }
+
+    /**
+     * Generate the right arm render
+     *
+     * @return void
+     */
+    protected static function renderRightArm() {
+        $rightArm = new Imagick();
+        $rightArm->newImage(200, 200, new ImagickPixel('transparent'), 'png');
+
+        $topRightArm = new Imagick(self::$imageSrc);
+        $topRightArm->cropImage(4, 4, 36, 48);
+        $topRightArm->resizeImage(4 * self::$enlargeRatio, 4 * self::$enlargeRatio, imagick::FILTER_BOX, 0);
+        $topRightArm->setimagebackgroundcolor("transparent");
+        $topRightArm->setImageVirtualPixelMethod(Imagick::VIRTUALPIXELMETHOD_BACKGROUND);
+        $topRightArm->distortImage(Imagick::DISTORTION_PERSPECTIVE, [
+            0, 0,
+            0, $topRightArm->getImageHeight() / 2,
+
+            0, $topRightArm->getImageHeight(),
+            ($topRightArm->getImageWidth() / 4) * 3, $topRightArm->getImageHeight(),
+
+            $topRightArm->getImageWidth(), 0,
+            ($topRightArm->getImageWidth() / 4) * 3, 0,
+
+            $topRightArm->getImageWidth(), $topRightArm->getImageHeight(),
+            $topRightArm->getImageWidth() * 1.5, $topRightArm->getImageHeight() / 2
+        ], true);
+        $topRightArm->trimImage(9999);
+        $topRightArm->setImagePage(0, 0, 0, 0);
+
+        $frontRightArm = new Imagick(self::$imageSrc);
+        $frontRightArm->cropImage(4, 12, 36, 52);
+        $frontRightArm->resizeImage(4 * self::$enlargeRatio, 12 * self::$enlargeRatio, imagick::FILTER_BOX, 0);
+        $frontRightArm->setimagebackgroundcolor("transparent");
+        $frontRightArm->setImageVirtualPixelMethod(Imagick::VIRTUALPIXELMETHOD_BACKGROUND);
+        $frontRightArm->distortImage(Imagick::DISTORTION_PERSPECTIVE, [
+            0, 0,
+            0, 0,
+
+            0, $frontRightArm->getImageHeight(),
+            0, $frontRightArm->getImageHeight(),
+
+            $frontRightArm->getImageWidth(), 0,
+            $topRightArm->getImageWidth() / 2, -($topRightArm->getImageHeight() / 2),
+
+            $frontRightArm->getImageWidth(), $frontRightArm->getImageHeight(),
+            $topRightArm->getImageWidth() / 2, $frontRightArm->getImageHeight() - ($topRightArm->getImageHeight() / 2),
+        ], true);
+        $frontRightArm->trimImage(9999);
+        $frontRightArm->setImagePage(0, 0, 0, 0);
+
+        $rightArm->compositeImage($topRightArm, imagick::COMPOSITE_OVER, 0, 0);
+        $rightArm->compositeImage($frontRightArm, imagick::COMPOSITE_OVER, $topRightArm->getImageWidth() / 2 - 1, $topRightArm->getImageHeight() / 2);
+
+        $rightArm->trimImage(9999);
+        $rightArm->setImagePage(0, 0, 0, 0);
+        return $rightArm;
     }
 }
