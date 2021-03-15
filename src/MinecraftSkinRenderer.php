@@ -10,6 +10,9 @@ class MinecraftSkinRenderer {
     //The provided source
     protected static $imageSrc;
 
+    //Skin Type
+    protected static $legacySkin;
+
     //Enlarge Ration
     protected static $enlargeRatio = 8;
 
@@ -30,23 +33,39 @@ class MinecraftSkinRenderer {
     public static function render($src) {
         self::$imageSrc = realpath($src);
 
+        self::checkSkinSize();
+
         $canvas = new Imagick();
         $canvas->newImage(300, 500, new ImagickPixel('transparent'), 'png');
 
-        // //Create the parts
+        // Create the parts
         self::$head = self::renderHead();
         self::$leftArm = self::renderLeftArm();
         self::$rightArm = self::renderRightArm();
         self::$body = self::renderBody();
+        self::$leftLeg = self::renderLeftLeg();
+        self::$rightLeg = self::renderRightLeg();
 
-        // //Insert the parts
+        // Insert the parts
+        $canvas->compositeImage(self::$leftLeg, imagick::COMPOSITE_OVER, self::$leftArm->getImageWidth() / 2, self::$head->getImageHeight() + (self::$enlargeRatio * 7));
+        $canvas->compositeImage(self::$rightLeg, imagick::COMPOSITE_OVER, self::$leftArm->getImageWidth(), self::$head->getImageHeight() + (self::$enlargeRatio * 5));
         $canvas->compositeImage(self::$leftArm, imagick::COMPOSITE_OVER, 0, self::$head->getImageHeight() - (self::$enlargeRatio * 3));
         $canvas->compositeImage(self::$rightArm, imagick::COMPOSITE_OVER, 72, self::$head->getImageHeight() - (self::$enlargeRatio * 9));
         $canvas->compositeImage(self::$body, imagick::COMPOSITE_OVER, self::$leftArm->getImageWidth() / 2, self::$head->getImageHeight() - (self::$enlargeRatio * 5));
         $canvas->compositeImage(self::$head, imagick::COMPOSITE_OVER, self::$enlargeRatio * 1.5, 0);
 
+        // Crop the image
+        $canvas->trimImage(9999);
+        $canvas->setImagePage(0, 0, 0, 0);
+        $canvas->adaptiveResizeImage(120, 270);
+
         Header("Content-Type: image/png");
         return $canvas;
+    }
+
+    protected static function checkSkinSize() {
+        $skin = new Imagick(self::$imageSrc);
+        self::$legacySkin = ($skin->getImageHeight() == 32);
     }
 
     /**
@@ -283,7 +302,13 @@ class MinecraftSkinRenderer {
         $rightArm->newImage(200, 200, new ImagickPixel('transparent'), 'png');
 
         $topRightArm = new Imagick(self::$imageSrc);
-        $topRightArm->cropImage(4, 4, 36, 48);
+
+        if(self::$legacySkin) {
+            $topRightArm->cropImage(4, 4, 44, 16);
+        } else {
+            $topRightArm->cropImage(4, 4, 36, 48);
+        }
+
         $topRightArm->resizeImage(4 * self::$enlargeRatio, 4 * self::$enlargeRatio, imagick::FILTER_BOX, 0);
         $topRightArm->setimagebackgroundcolor("transparent");
         $topRightArm->setImageVirtualPixelMethod(Imagick::VIRTUALPIXELMETHOD_BACKGROUND);
@@ -304,7 +329,14 @@ class MinecraftSkinRenderer {
         $topRightArm->setImagePage(0, 0, 0, 0);
 
         $frontRightArm = new Imagick(self::$imageSrc);
-        $frontRightArm->cropImage(4, 12, 36, 52);
+
+        if(self::$legacySkin) {
+            $frontRightArm->cropImage(4, 12, 44, 20);
+            $frontRightArm->flopImage();
+        } else {
+            $frontRightArm->cropImage(4, 12, 36, 52);
+        }
+
         $frontRightArm->resizeImage(4 * self::$enlargeRatio, 12 * self::$enlargeRatio, imagick::FILTER_BOX, 0);
         $frontRightArm->setimagebackgroundcolor("transparent");
         $frontRightArm->setImageVirtualPixelMethod(Imagick::VIRTUALPIXELMETHOD_BACKGROUND);
@@ -330,5 +362,158 @@ class MinecraftSkinRenderer {
         $rightArm->trimImage(9999);
         $rightArm->setImagePage(0, 0, 0, 0);
         return $rightArm;
+    }
+
+    /**
+     * Generate the left leg render
+     *
+     * @return void
+     */
+    protected static function renderLeftLeg() {
+        $leftLeg = new Imagick();
+        $leftLeg->newImage(200, 200, new ImagickPixel('transparent'), 'png');
+
+        $topLeftLeg = new Imagick(self::$imageSrc);
+        $topLeftLeg->cropImage(4, 4, 44, 16);
+        $topLeftLeg->resizeImage(4 * self::$enlargeRatio, 4 * self::$enlargeRatio, imagick::FILTER_BOX, 0);
+        $topLeftLeg->setimagebackgroundcolor("transparent");
+        $topLeftLeg->setImageVirtualPixelMethod(Imagick::VIRTUALPIXELMETHOD_BACKGROUND);
+        $topLeftLeg->distortImage(Imagick::DISTORTION_PERSPECTIVE, [
+            0, 0,
+            0, $topLeftLeg->getImageHeight() / 2,
+
+            0, $topLeftLeg->getImageHeight(),
+            ($topLeftLeg->getImageWidth() / 4) * 3, $topLeftLeg->getImageHeight(),
+
+            $topLeftLeg->getImageWidth(), 0,
+            ($topLeftLeg->getImageWidth() / 4) * 3, 0,
+
+            $topLeftLeg->getImageWidth(), $topLeftLeg->getImageHeight(),
+            $topLeftLeg->getImageWidth() * 1.5, $topLeftLeg->getImageHeight() / 2
+        ], true);
+        $topLeftLeg->trimImage(9999);
+        $topLeftLeg->setImagePage(0, 0, 0, 0);
+
+        $leftleftLeg = new Imagick(self::$imageSrc);
+        $leftleftLeg->cropImage(4, 12, 0, 20);
+        $leftleftLeg->resizeImage(4 * self::$enlargeRatio, 12 * self::$enlargeRatio, imagick::FILTER_BOX, 0);
+        $leftleftLeg->setimagebackgroundcolor("transparent");
+        $leftleftLeg->setImageVirtualPixelMethod(Imagick::VIRTUALPIXELMETHOD_BACKGROUND);
+        $leftleftLeg->distortImage(Imagick::DISTORTION_PERSPECTIVE, [
+            0, 0,
+            0, 0,
+
+            0, $leftleftLeg->getImageHeight(),
+            0, $leftleftLeg->getImageHeight(),
+
+            $leftleftLeg->getImageWidth(), 0,
+            $topLeftLeg->getImageWidth() / 2, $topLeftLeg->getImageHeight() / 2,
+
+            $leftleftLeg->getImageWidth(), $leftleftLeg->getImageHeight(),
+            $topLeftLeg->getImageWidth() / 2, $leftleftLeg->getImageHeight() + ($topLeftLeg->getImageHeight() / 2)
+        ], true);
+        $leftleftLeg->trimImage(9999);
+        $leftleftLeg->setImagePage(0, 0, 0, 0);
+
+        $frontleftLeg = new Imagick(self::$imageSrc);
+        $frontleftLeg->cropImage(4, 12, 4, 20);
+        $frontleftLeg->resizeImage(4 * self::$enlargeRatio, 12 * self::$enlargeRatio, imagick::FILTER_BOX, 0);
+        $frontleftLeg->setimagebackgroundcolor("transparent");
+        $frontleftLeg->setImageVirtualPixelMethod(Imagick::VIRTUALPIXELMETHOD_BACKGROUND);
+        $frontleftLeg->distortImage(Imagick::DISTORTION_PERSPECTIVE, [
+            0, 0,
+            0, 0,
+
+            0, $frontleftLeg->getImageHeight(),
+            0, $frontleftLeg->getImageHeight(),
+
+            $frontleftLeg->getImageWidth(), 0,
+            $topLeftLeg->getImageWidth() / 2, -($topLeftLeg->getImageHeight() / 2),
+
+            $frontleftLeg->getImageWidth(), $frontleftLeg->getImageHeight(),
+            $topLeftLeg->getImageWidth() / 2, $frontleftLeg->getImageHeight() - ($topLeftLeg->getImageHeight() / 2),
+        ], true);
+        $frontleftLeg->trimImage(9999);
+        $frontleftLeg->setImagePage(0, 0, 0, 0);
+
+        $leftLeg->compositeImage($topLeftLeg, imagick::COMPOSITE_OVER, 0, 0);
+        $leftLeg->compositeImage($leftleftLeg, imagick::COMPOSITE_OVER, 0, $topLeftLeg->getImageHeight() / 2);
+        $leftLeg->compositeImage($frontleftLeg, imagick::COMPOSITE_OVER, $topLeftLeg->getImageWidth() / 2 - 1, $topLeftLeg->getImageHeight() / 2);
+
+        $leftLeg->trimImage(9999);
+        $leftLeg->setImagePage(0, 0, 0, 0);
+        return $leftLeg;
+    }
+
+    /**
+     * Generate the right leg render
+     *
+     * @return void
+     */
+    protected static function renderRightLeg() {
+        $rightLeg = new Imagick();
+        $rightLeg->newImage(200, 200, new ImagickPixel('transparent'), 'png');
+
+        $topRightLeg = new Imagick(self::$imageSrc);
+
+        if(self::$legacySkin) {
+            $topRightLeg->cropImage(4, 4, 4, 16);
+        } else {
+            $topRightLeg->cropImage(4, 4, 20, 48);
+        }
+
+        $topRightLeg->resizeImage(4 * self::$enlargeRatio, 4 * self::$enlargeRatio, imagick::FILTER_BOX, 0);
+        $topRightLeg->setimagebackgroundcolor("transparent");
+        $topRightLeg->setImageVirtualPixelMethod(Imagick::VIRTUALPIXELMETHOD_BACKGROUND);
+        $topRightLeg->distortImage(Imagick::DISTORTION_PERSPECTIVE, [
+            0, 0,
+            0, $topRightLeg->getImageHeight() / 2,
+
+            0, $topRightLeg->getImageHeight(),
+            ($topRightLeg->getImageWidth() / 4) * 3, $topRightLeg->getImageHeight(),
+
+            $topRightLeg->getImageWidth(), 0,
+            ($topRightLeg->getImageWidth() / 4) * 3, 0,
+
+            $topRightLeg->getImageWidth(), $topRightLeg->getImageHeight(),
+            $topRightLeg->getImageWidth() * 1.5, $topRightLeg->getImageHeight() / 2
+        ], true);
+        $topRightLeg->trimImage(9999);
+        $topRightLeg->setImagePage(0, 0, 0, 0);
+
+        $frontRightLeg = new Imagick(self::$imageSrc);
+
+        if(self::$legacySkin) {
+            $frontRightLeg->cropImage(4, 12, 4, 20);
+            $frontRightLeg->flopImage();
+        } else {
+            $frontRightLeg->cropImage(4, 12, 20, 52);
+        }
+
+        $frontRightLeg->resizeImage(4 * self::$enlargeRatio, 12 * self::$enlargeRatio, imagick::FILTER_BOX, 0);
+        $frontRightLeg->setimagebackgroundcolor("transparent");
+        $frontRightLeg->setImageVirtualPixelMethod(Imagick::VIRTUALPIXELMETHOD_BACKGROUND);
+        $frontRightLeg->distortImage(Imagick::DISTORTION_PERSPECTIVE, [
+            0, 0,
+            0, 0,
+
+            0, $frontRightLeg->getImageHeight(),
+            0, $frontRightLeg->getImageHeight(),
+
+            $frontRightLeg->getImageWidth(), 0,
+            $topRightLeg->getImageWidth() / 2, -($topRightLeg->getImageHeight() / 2),
+
+            $frontRightLeg->getImageWidth(), $frontRightLeg->getImageHeight(),
+            $topRightLeg->getImageWidth() / 2, $frontRightLeg->getImageHeight() - ($topRightLeg->getImageHeight() / 2),
+        ], true);
+        $frontRightLeg->trimImage(9999);
+        $frontRightLeg->setImagePage(0, 0, 0, 0);
+
+        $rightLeg->compositeImage($topRightLeg, imagick::COMPOSITE_OVER, 0, 0);
+        $rightLeg->compositeImage($frontRightLeg, imagick::COMPOSITE_OVER, $topRightLeg->getImageWidth() / 2 - 1, $topRightLeg->getImageHeight() / 2);
+
+        $rightLeg->trimImage(9999);
+        $rightLeg->setImagePage(0, 0, 0, 0);
+        return $rightLeg;
     }
 }
