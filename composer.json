@@ -2,6 +2,7 @@
     "name": "james090500/minecraft-skin-renderer",
     "description": "Creates a 3D render of a minecraft skin in PHP",
     "type": "library",
+    "license": "MIT",
     "require": {
         "php": ">=7.0"
     },
