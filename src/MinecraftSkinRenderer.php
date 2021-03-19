@@ -3,6 +3,7 @@
 namespace james090500;
 
 use Imagick;
+use ImagickException;
 use ImagickPixel;
 
 class MinecraftSkinRenderer {
@@ -39,10 +40,30 @@ class MinecraftSkinRenderer {
      * @return void
      */
     public static function render($src) {
-        self::$imageSrc = realpath($src);
+        //Try and load the image
+        //Check if image is url
+        //Check if resource
+        //Try load file handle
+        //Otherwise load path
+        if(filter_var($src, FILTER_VALIDATE_URL)) {
+            self::$imageSrc = new Imagick;
+            self::$imageSrc->readImageBlob(file_get_contents($src));
+        } else if(is_resource($src)) {
+            self::$imageSrc = new Imagick;
+            self::$imageSrc->readImageFile($src);
+        } else {
+            self::$imageSrc = new Imagick;
+            try {
+                self::$imageSrc->readImageBlob($src);
+            } catch(ImagickException $exception) {
+                self::$imageSrc = new Imagick(realpath($src));
+            }
+        }
 
-        self::checkSkinSize();
+        //Check if skin is legacy
+        self::$legacySkin = (self::$imageSrc->getImageHeight() == 32);
 
+        //Create the canvas
         $canvas = new Imagick();
         $canvas->newImage(120 * self::$enlargeRatio, 270 * self::$enlargeRatio, new ImagickPixel('transparent'), 'png');
 
@@ -88,14 +109,7 @@ class MinecraftSkinRenderer {
         $canvas->trimImage(9999);
         $canvas->setImagePage(0, 0, 0, 0);
         $canvas->adaptiveResizeImage(120, 270);
-
-        Header("Content-Type: image/png");
         return $canvas;
-    }
-
-    protected static function checkSkinSize() {
-        $skin = new Imagick(self::$imageSrc);
-        self::$legacySkin = ($skin->getImageHeight() == 32);
     }
 
     /**
@@ -107,7 +121,7 @@ class MinecraftSkinRenderer {
         $head = new Imagick();
         $head->newImage(100 * self::$enlargeRatio, 100 * self::$enlargeRatio, new ImagickPixel('transparent'), 'png');
 
-        $topHead = new Imagick(self::$imageSrc);
+        $topHead = clone self::$imageSrc;
         $topHead->cropImage(8, 8, 8, 0);
         $topHead->resizeImage($topHead->getImageWidth() * self::$enlargeRatio, $topHead->getImageHeight() * self::$enlargeRatio, imagick::FILTER_POINT, 0);
         $topHead->setimagebackgroundcolor("transparent");
@@ -128,7 +142,7 @@ class MinecraftSkinRenderer {
         $topHead->trimImage(9999);
         $topHead->setImagePage(0, 0, 0, 0);
 
-        $frontHead = new Imagick(self::$imageSrc);
+        $frontHead = clone self::$imageSrc;
         $frontHead->cropImage(8, 8, 8, 8);
         $frontHead->resizeImage($frontHead->getImageWidth() * self::$enlargeRatio, $frontHead->getImageHeight() * self::$enlargeRatio, imagick::FILTER_POINT, 0);
         $frontHead->setimagebackgroundcolor("transparent");
@@ -149,7 +163,7 @@ class MinecraftSkinRenderer {
         $frontHead->trimImage(9999);
         $frontHead->setImagePage(0, 0, 0, 0);
 
-        $leftHelmet = new Imagick(self::$imageSrc);
+        $leftHelmet = clone self::$imageSrc;
         $leftHelmet->cropImage(8, 8, 0, 8);
         $leftHelmet->resizeImage($leftHelmet->getImageWidth() * self::$enlargeRatio, $leftHelmet->getImageHeight() * self::$enlargeRatio, imagick::FILTER_POINT, 0);
         $leftHelmet->setimagebackgroundcolor("transparent");
@@ -187,7 +201,7 @@ class MinecraftSkinRenderer {
         $body = new Imagick();
         $body->newImage(100 * self::$enlargeRatio, 100 * self::$enlargeRatio, new ImagickPixel('transparent'), 'png');
 
-        $topBody = new Imagick(self::$imageSrc);
+        $topBody = clone self::$imageSrc;
         $topBody->cropImage(8, 4, 20, 16);
         $topBody->resizeImage(8 * self::$enlargeRatio, 4 * self::$enlargeRatio, imagick::FILTER_POINT, 0);
         $topBody->setimagebackgroundcolor("transparent");
@@ -208,7 +222,7 @@ class MinecraftSkinRenderer {
         $topBody->trimImage(9999);
         $topBody->setImagePage(0, 0, 0, 0);
 
-        $frontBody = new Imagick(self::$imageSrc);
+        $frontBody = clone self::$imageSrc;
         $frontBody->cropImage(8, 12, 20, 20);
         $frontBody->resizeImage($frontBody->getImageWidth() * self::$enlargeRatio, $frontBody->getImageHeight() * self::$enlargeRatio, imagick::FILTER_POINT, 0);
         $frontBody->setimagebackgroundcolor("transparent");
@@ -250,7 +264,7 @@ class MinecraftSkinRenderer {
         $leftArm = new Imagick();
         $leftArm->newImage(100 * self::$enlargeRatio, 100 * self::$enlargeRatio, new ImagickPixel('transparent'), 'png');
 
-        $topLeftArm = new Imagick(self::$imageSrc);
+        $topLeftArm = clone self::$imageSrc;
         if(self::$legacySkin) {
             $topLeftArm->cropImage(4, 4, 44, 16);
         } else {
@@ -276,7 +290,7 @@ class MinecraftSkinRenderer {
         $topLeftArm->trimImage(9999);
         $topLeftArm->setImagePage(0, 0, 0, 0);
 
-        $leftLeftArm = new Imagick(self::$imageSrc);
+        $leftLeftArm = clone self::$imageSrc;
         if(self::$legacySkin) {
             $leftLeftArm->cropImage(4, 12, 48, 20);
         } else {
@@ -302,7 +316,7 @@ class MinecraftSkinRenderer {
         $leftLeftArm->trimImage(9999);
         $leftLeftArm->setImagePage(0, 0, 0, 0);
 
-        $frontLeftArm = new Imagick(self::$imageSrc);
+        $frontLeftArm = clone self::$imageSrc;
         if(self::$legacySkin) {
             $frontLeftArm->cropImage(4, 12, 44, 20);
         } else {
@@ -346,7 +360,7 @@ class MinecraftSkinRenderer {
         $rightArm = new Imagick();
         $rightArm->newImage(100 * self::$enlargeRatio, 100 * self::$enlargeRatio, new ImagickPixel('transparent'), 'png');
 
-        $topRightArm = new Imagick(self::$imageSrc);
+        $topRightArm = clone self::$imageSrc;
         $topRightArm->cropImage(4, 4, 44, 16);
         $topRightArm->resizeImage(4 * self::$enlargeRatio, 4 * self::$enlargeRatio, imagick::FILTER_POINT, 0);
         $topRightArm->setimagebackgroundcolor("transparent");
@@ -367,7 +381,7 @@ class MinecraftSkinRenderer {
         $topRightArm->trimImage(9999);
         $topRightArm->setImagePage(0, 0, 0, 0);
 
-        $frontRightArm = new Imagick(self::$imageSrc);
+        $frontRightArm = clone self::$imageSrc;
         $frontRightArm->cropImage(4, 12, 44, 20);
         if(self::$legacySkin) {
             $frontRightArm->flopImage();
@@ -408,7 +422,7 @@ class MinecraftSkinRenderer {
         $leftLeg = new Imagick();
         $leftLeg->newImage(100 * self::$enlargeRatio, 100 * self::$enlargeRatio, new ImagickPixel('transparent'), 'png');
 
-        $topLeftLeg = new Imagick(self::$imageSrc);
+        $topLeftLeg = clone self::$imageSrc;
         if(self::$legacySkin) {
             $topLeftLeg->cropImage(4, 4, 4, 16);
         } else {
@@ -433,7 +447,7 @@ class MinecraftSkinRenderer {
         $topLeftLeg->trimImage(9999);
         $topLeftLeg->setImagePage(0, 0, 0, 0);
 
-        $leftleftLeg = new Imagick(self::$imageSrc);
+        $leftleftLeg = clone self::$imageSrc;
         if(self::$legacySkin) {
             $leftleftLeg->cropImage(4, 12, 8, 20);
         } else {
@@ -459,7 +473,7 @@ class MinecraftSkinRenderer {
         $leftleftLeg->trimImage(9999);
         $leftleftLeg->setImagePage(0, 0, 0, 0);
 
-        $frontleftLeg = new Imagick(self::$imageSrc);
+        $frontleftLeg = clone self::$imageSrc;
         if(self::$legacySkin) {
             $frontleftLeg->cropImage(4, 12, 4, 20);
         } else {
@@ -503,7 +517,7 @@ class MinecraftSkinRenderer {
         $rightLeg = new Imagick();
         $rightLeg->newImage(100 * self::$enlargeRatio, 100 * self::$enlargeRatio, new ImagickPixel('transparent'), 'png');
 
-        $topRightLeg = new Imagick(self::$imageSrc);
+        $topRightLeg = clone self::$imageSrc;
         $topRightLeg->cropImage(4, 4, 4, 16);
         $topRightLeg->resizeImage(4 * self::$enlargeRatio, 4 * self::$enlargeRatio, imagick::FILTER_POINT, 0);
         $topRightLeg->setimagebackgroundcolor("transparent");
@@ -524,7 +538,7 @@ class MinecraftSkinRenderer {
         $topRightLeg->trimImage(9999);
         $topRightLeg->setImagePage(0, 0, 0, 0);
 
-        $frontRightLeg = new Imagick(self::$imageSrc);
+        $frontRightLeg = clone self::$imageSrc;
 
         $frontRightLeg->cropImage(4, 12, 4, 20);
         $frontRightLeg->flopImage();
@@ -564,7 +578,7 @@ class MinecraftSkinRenderer {
         $helmet = new Imagick();
         $helmet->newImage(100 * self::$enlargeRatio, 100 * self::$enlargeRatio, new ImagickPixel('transparent'), 'png');
 
-        $topHelmet = new Imagick(self::$imageSrc);
+        $topHelmet = clone self::$imageSrc;
         $topHelmet->cropImage(8, 8, 40, 0);
         $topHelmet->resizeImage($topHelmet->getImageWidth() * self::$enlargeRatio, $topHelmet->getImageHeight() * self::$enlargeRatio, imagick::FILTER_POINT, 0);
         $topHelmet->setimagebackgroundcolor("transparent");
@@ -585,7 +599,7 @@ class MinecraftSkinRenderer {
         $topHelmet->trimImage(9999);
         $topHelmet->setImagePage(0, 0, 0, 0);
 
-        $frontHelmet = new Imagick(self::$imageSrc);
+        $frontHelmet = clone self::$imageSrc;
         $frontHelmet->cropImage(8, 8, 40, 8);
         $frontHelmet->resizeImage($frontHelmet->getImageWidth() * self::$enlargeRatio, $frontHelmet->getImageHeight() * self::$enlargeRatio, imagick::FILTER_POINT, 0);
         $frontHelmet->setimagebackgroundcolor("transparent");
@@ -606,7 +620,7 @@ class MinecraftSkinRenderer {
         $frontHelmet->trimImage(9999);
         $frontHelmet->setImagePage(0, 0, 0, 0);
 
-        $leftHelmet = new Imagick(self::$imageSrc);
+        $leftHelmet = clone self::$imageSrc;
         $leftHelmet->cropImage(8, 8, 32, 8);
         $leftHelmet->resizeImage($leftHelmet->getImageWidth() * self::$enlargeRatio, $leftHelmet->getImageHeight() * self::$enlargeRatio, imagick::FILTER_POINT, 0);
         $leftHelmet->setimagebackgroundcolor("transparent");
@@ -644,7 +658,7 @@ class MinecraftSkinRenderer {
         $jacket = new Imagick();
         $jacket->newImage(100 * self::$enlargeRatio, 100 * self::$enlargeRatio, new ImagickPixel('transparent'), 'png');
 
-        $topJacket = new Imagick(self::$imageSrc);
+        $topJacket = clone self::$imageSrc;
         $topJacket->cropImage(8, 4, 20, 32);
         $topJacket->resizeImage(8 * self::$enlargeRatio, 4 * self::$enlargeRatio, imagick::FILTER_POINT, 0);
         $topJacket->setimagebackgroundcolor("transparent");
@@ -665,7 +679,7 @@ class MinecraftSkinRenderer {
         $topJacket->trimImage(9999);
         $topJacket->setImagePage(0, 0, 0, 0);
 
-        $frontJacket = new Imagick(self::$imageSrc);
+        $frontJacket = clone self::$imageSrc;
         $frontJacket->cropImage(8, 12, 20, 36);
         $frontJacket->resizeImage($frontJacket->getImageWidth() * self::$enlargeRatio, $frontJacket->getImageHeight() * self::$enlargeRatio, imagick::FILTER_POINT, 0);
         $frontJacket->setimagebackgroundcolor("transparent");
@@ -707,7 +721,7 @@ class MinecraftSkinRenderer {
         $leftSleeve = new Imagick();
         $leftSleeve->newImage(100 * self::$enlargeRatio, 100 * self::$enlargeRatio, new ImagickPixel('transparent'), 'png');
 
-        $topLeftSleeve = new Imagick(self::$imageSrc);
+        $topLeftSleeve = clone self::$imageSrc;
         $topLeftSleeve->cropImage(4, 4, 52, 48);
         $topLeftSleeve->resizeImage(4 * self::$enlargeRatio, 4 * self::$enlargeRatio, imagick::FILTER_POINT, 0);
         $topLeftSleeve->setimagebackgroundcolor("transparent");
@@ -728,7 +742,7 @@ class MinecraftSkinRenderer {
         $topLeftSleeve->trimImage(9999);
         $topLeftSleeve->setImagePage(0, 0, 0, 0);
 
-        $leftLeftSleeve = new Imagick(self::$imageSrc);
+        $leftLeftSleeve = clone self::$imageSrc;
         $leftLeftSleeve->cropImage(4, 12, 56, 52);
         $leftLeftSleeve->resizeImage(4 * self::$enlargeRatio, 12 * self::$enlargeRatio, imagick::FILTER_POINT, 0);
         $leftLeftSleeve->setimagebackgroundcolor("transparent");
@@ -749,7 +763,7 @@ class MinecraftSkinRenderer {
         $leftLeftSleeve->trimImage(9999);
         $leftLeftSleeve->setImagePage(0, 0, 0, 0);
 
-        $frontLeftSleeve = new Imagick(self::$imageSrc);
+        $frontLeftSleeve = clone self::$imageSrc;
         $frontLeftSleeve->cropImage(4, 12, 52, 52);
         $frontLeftSleeve->resizeImage(4 * self::$enlargeRatio, 12 * self::$enlargeRatio, imagick::FILTER_POINT, 0);
         $frontLeftSleeve->setimagebackgroundcolor("transparent");
@@ -788,7 +802,7 @@ class MinecraftSkinRenderer {
         $rightSleeve = new Imagick();
         $rightSleeve->newImage(100 * self::$enlargeRatio, 100 * self::$enlargeRatio, new ImagickPixel('transparent'), 'png');
 
-        $topRightSleeve = new Imagick(self::$imageSrc);
+        $topRightSleeve = clone self::$imageSrc;
         $topRightSleeve->cropImage(4, 4, 44, 32);
         $topRightSleeve->resizeImage(4 * self::$enlargeRatio, 4 * self::$enlargeRatio, imagick::FILTER_POINT, 0);
         $topRightSleeve->setimagebackgroundcolor("transparent");
@@ -809,7 +823,7 @@ class MinecraftSkinRenderer {
         $topRightSleeve->trimImage(9999);
         $topRightSleeve->setImagePage(0, 0, 0, 0);
 
-        $frontRightSleeve = new Imagick(self::$imageSrc);
+        $frontRightSleeve = clone self::$imageSrc;
         $frontRightSleeve->cropImage(4, 12, 44, 36);
         $frontRightSleeve->resizeImage(4 * self::$enlargeRatio, 12 * self::$enlargeRatio, imagick::FILTER_POINT, 0);
         $frontRightSleeve->setimagebackgroundcolor("transparent");
@@ -847,7 +861,7 @@ class MinecraftSkinRenderer {
         $leftPants = new Imagick();
         $leftPants->newImage(100 * self::$enlargeRatio, 100 * self::$enlargeRatio, new ImagickPixel('transparent'), 'png');
 
-        $topLeftPants = new Imagick(self::$imageSrc);
+        $topLeftPants = clone self::$imageSrc;
         $topLeftPants->cropImage(4, 4, 4, 48);
         $topLeftPants->resizeImage(4 * self::$enlargeRatio, 4 * self::$enlargeRatio, imagick::FILTER_POINT, 0);
         $topLeftPants->setimagebackgroundcolor("transparent");
@@ -868,7 +882,7 @@ class MinecraftSkinRenderer {
         $topLeftPants->trimImage(9999);
         $topLeftPants->setImagePage(0, 0, 0, 0);
 
-        $leftLeftPants = new Imagick(self::$imageSrc);
+        $leftLeftPants = clone self::$imageSrc;
         $leftLeftPants->cropImage(4, 12, 8, 52);
         $leftLeftPants->flopImage();
         $leftLeftPants->resizeImage(4 * self::$enlargeRatio, 12 * self::$enlargeRatio, imagick::FILTER_POINT, 0);
@@ -890,7 +904,7 @@ class MinecraftSkinRenderer {
         $leftLeftPants->trimImage(9999);
         $leftLeftPants->setImagePage(0, 0, 0, 0);
 
-        $frontLeftPants = new Imagick(self::$imageSrc);
+        $frontLeftPants = clone self::$imageSrc;
         $frontLeftPants->cropImage(4, 12, 4, 52);
         $frontLeftPants->flopImage();
         $frontLeftPants->resizeImage(4 * self::$enlargeRatio, 12 * self::$enlargeRatio, imagick::FILTER_POINT, 0);
@@ -930,7 +944,7 @@ class MinecraftSkinRenderer {
         $rightPants = new Imagick();
         $rightPants->newImage(100 * self::$enlargeRatio, 100 * self::$enlargeRatio, new ImagickPixel('transparent'), 'png');
 
-        $topRightPants = new Imagick(self::$imageSrc);
+        $topRightPants = clone self::$imageSrc;
         $topRightPants->cropImage(4, 4, 4, 32);
         $topRightPants->resizeImage(4 * self::$enlargeRatio, 4 * self::$enlargeRatio, imagick::FILTER_POINT, 0);
         $topRightPants->setimagebackgroundcolor("transparent");
@@ -951,7 +965,7 @@ class MinecraftSkinRenderer {
         $topRightPants->trimImage(9999);
         $topRightPants->setImagePage(0, 0, 0, 0);
 
-        $frontRightPants = new Imagick(self::$imageSrc);
+        $frontRightPants = clone self::$imageSrc;
         $frontRightPants->cropImage(4, 12, 4, 36);
         $frontRightPants->flopImage();
         $frontRightPants->resizeImage(4 * self::$enlargeRatio, 12 * self::$enlargeRatio, imagick::FILTER_POINT, 0);
