@@ -13,6 +13,7 @@ class MinecraftSkinRenderer {
 
     //Skin Type
     protected static $legacySkin;
+    protected static $isAlex;
 
     //Enlarge Ration
     protected static $enlargeRatio = 8;
@@ -62,6 +63,14 @@ class MinecraftSkinRenderer {
 
         //Check if skin is legacy
         self::$legacySkin = (self::$imageSrc->getImageHeight() == 32);
+
+        //Check if skin is alex
+        //TODO
+        if(!self::$legacySkin) {
+            $alexSkin = clone self::$imageSrc;
+            $alexSkin->cropImage(1, 12, 54, 20);
+            self::$isAlex = $alexSkin->getImageColors() == 1;
+        }
 
         //Create the canvas
         $canvas = new Imagick();
